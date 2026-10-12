@@ -21,7 +21,6 @@ The kernel source is maintained separately:
 - Repository: https://github.com/reyaansh72/android_kernel_motorola_sm6375
 - Port branch: `postmarketos-motorola-fogos`
 - Pinned commit: `6ad40bbece9c25275752c07e1fb9320c37425fe5`
-- Branch: `pmos-motorola-fogos`
 
 ## Kernel configuration
 
