@@ -1,0 +1,24 @@
+# Motorola Moto G45 5G (fogos)
+# Device metadata for the postmarketOS downstream port.
+
+deviceinfo_format_version="0"
+deviceinfo_name="Motorola Moto G45 5G"
+deviceinfo_manufacturer="Motorola"
+deviceinfo_codename="motorola-fogos"
+deviceinfo_year="2024"
+deviceinfo_arch="aarch64"
+deviceinfo_chassis="handset"
+
+# Initramfs
+deviceinfo_initfs_compression="gzip"
+
+# Bootloader and boot image
+deviceinfo_flash_method="fastboot"
+deviceinfo_generate_bootimg="true"
+deviceinfo_flash_pagesize="4096"
+deviceinfo_bootimg_qcdt="false"
+deviceinfo_header_version="3"
+
+# To be determined from the device's actual boot configuration.
+deviceinfo_dtb=""
+deviceinfo_kernel_cmdline="console=tty0"

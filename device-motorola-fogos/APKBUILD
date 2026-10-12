@@ -1,0 +1,34 @@
+# Device package for Motorola Moto G45 5G (fogos)
+maintainer=""
+pkgname=device-motorola-fogos
+pkgver=1
+pkgrel=0
+pkgdesc="Motorola Moto G45 5G"
+url="https://github.com/Motorola-SM6375-Devs/android_device_motorola_fogos"
+arch="aarch64"
+license="MIT"
+depends="
+        android-tools-mkbootimg
+        linux-motorola-fogos
+        postmarketos-base
+        postmarketos-base-downstream
+        "
+makedepends="devicepkg-dev"
+source="
+        deviceinfo
+        modules-initfs
+        "
+options="!archcheck !check"
+
+build() {
+        devicepkg_build "$startdir" "$pkgname"
+}
+
+package() {
+        devicepkg_package "$startdir" "$pkgname"
+}
+
+sha512sums="
+1adb40927f9294124fbcad6af17847edec3ea701a168a0d3c6734d364c2849abcfcdd89265788b5312bd696ed2e2749ee3be67aa202e33db00c26b02d0b859f8  deviceinfo
+1e16cd8cd955dc3856d53978e8c0897ff730b4d0588e5f1153c5c148cb40d1cf330173fe9cd47d9c69ae689721040d5804ac0dd61c2741e95f16547316bc801b  modules-initfs
+"
