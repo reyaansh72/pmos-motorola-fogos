@@ -1,0 +1,1199 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10251a">
+  <meta name="description" content="The community-driven postmarketOS port for Motorola Moto G45 5G (fogos). Follow development, explore the kernel, and prepare to test.">
+
+  <title>Fogos Linux — postmarketOS for Motorola</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1510;
+      --surface: #14231a;
+      --surface2: #1d3023;
+      --surface3: #29412e;
+      --text: #e3f5e6;
+      --muted: #a2b9a6;
+      --accent: #a4f3b2;
+      --accent-ink: #12351e;
+      --border: #304938;
+      --header: #0b1510e8;
+      --shadow: 0 20px 60px #0003;
+      --code: #08110b;
+    }
+
+    [data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f8f1;
+      --surface: #ffffff;
+      --surface2: #e8f2e5;
+      --surface3: #d7e9d5;
+      --text: #172a1c;
+      --muted: #586e5b;
+      --accent: #216d37;
+      --accent-ink: #ffffff;
+      --border: #d5e3d2;
+      --header: #f4f8f1e8;
+      --shadow: 0 20px 60px #294d2510;
+      --code: #102016;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 95px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "DM Sans", sans-serif;
+      line-height: 1.65;
+      transition: background .25s, color .25s;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    ::selection { background: var(--accent); color: var(--accent-ink); }
+
+    .container {
+      width: min(1120px, calc(100% - 40px));
+      margin-inline: auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      background: var(--header);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font: 700 19px "Space Grotesk", sans-serif;
+      letter-spacing: -.6px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--accent);
+    }
+
+    .brand-mark svg { width: 28px; height: 28px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .nav-links a:hover, .footer-links a:hover { color: var(--accent); }
+
+    .nav-actions { display: flex; gap: 9px; align-items: center; }
+
+    .icon-button {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 19px;
+    }
+
+    .menu-button { display: none; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 100px 0 80px;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 650px;
+      height: 650px;
+      right: -220px;
+      top: -130px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #4ed76c20, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.12fr .88fr;
+      align-items: center;
+      gap: 40px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 13px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: var(--surface);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+      background: #72df8b;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #72df8b;
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", sans-serif;
+      line-height: 1.15;
+      letter-spacing: -1px;
+    }
+
+    h1 {
+      font-size: clamp(43px, 6.2vw, 74px);
+      margin: 24px 0 18px;
+    }
+
+    h1 .accent { color: var(--accent); }
+
+    .hero-copy {
+      max-width: 540px;
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      min-height: 47px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 12px 19px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: transform .2s, filter .2s;
+    }
+
+    .btn:hover { transform: translateY(-3px); filter: brightness(1.08); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--accent-ink);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .hero-note {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 24px;
+    }
+
+    .device-art {
+      min-height: 390px;
+      display: grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .orb {
+      position: absolute;
+      width: 330px;
+      height: 330px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #47d96935, #47d96900 70%);
+    }
+
+    .phone {
+      width: 190px;
+      height: 360px;
+      padding: 8px;
+      position: relative;
+      border: 2px solid #79c98a;
+      border-radius: 38px;
+      background: linear-gradient(145deg, #52765a, #101c13 50%, #34523a);
+      box-shadow: 0 0 0 8px #73d68a0b, 0 30px 80px #0007;
+      transform: rotate(-7deg);
+      animation: float 5s ease-in-out infinite;
+    }
+
+    .phone-screen {
+      height: 100%;
+      border-radius: 29px;
+      background:
+        radial-gradient(ellipse at 50% 30%, #2a8140 0%, transparent 48%),
+        linear-gradient(155deg, #173c25, #08140c);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .phone-notch {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      width: 65px;
+      height: 15px;
+      border-radius: 0 0 12px 12px;
+      background: #050b07;
+    }
+
+    .phone-logo {
+      width: 85px;
+      height: 85px;
+      border-radius: 28px;
+      background: #a4f3b2;
+      color: #163d27;
+      display: grid;
+      place-items: center;
+      font: 700 36px "Space Grotesk", sans-serif;
+      box-shadow: 0 0 45px #83f79b35;
+    }
+
+    .phone-screen strong {
+      margin-top: 22px;
+      color: #e1ffe6;
+      font: 700 16px "Space Grotesk", sans-serif;
+    }
+
+    .phone-screen small { color: #a4c7ab; font-size: 10px; }
+
+    .floating-chip {
+      position: absolute;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 12px 15px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+
+    .chip-one { top: 43px; right: 0; }
+    .chip-two { bottom: 40px; left: 0; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-7deg); }
+      50% { transform: translateY(-12px) rotate(-4deg); }
+    }
+
+    section { padding: 76px 0; }
+
+    .section-heading {
+      max-width: 690px;
+      margin-bottom: 30px;
+    }
+
+    .kicker {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+    }
+
+    h2 {
+      font-size: clamp(30px, 4vw, 43px);
+      margin: 10px 0 13px;
+    }
+
+    .section-heading p { color: var(--muted); margin: 0; }
+
+    .grid { display: grid; gap: 17px; }
+    .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card {
+      min-width: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      padding: 24px;
+      transition: transform .2s, border-color .2s;
+    }
+
+    .card:hover { transform: translateY(-4px); border-color: var(--accent); }
+
+    .stat-label { color: var(--muted); font-size: 12px; }
+
+    .stat-value {
+      margin: 9px 0 3px;
+      font: 700 24px "Space Grotesk", sans-serif;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-note { color: var(--muted); font-size: 11px; }
+
+    .icon-box {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+      border-radius: 16px;
+      background: var(--surface2);
+      color: var(--accent);
+      font-size: 23px;
+    }
+
+    .card h3 { font-size: 18px; letter-spacing: -.3px; margin: 0 0 10px; }
+    .card p { color: var(--muted); font-size: 13px; margin: 0; }
+
+    .roadmap { display: grid; gap: 12px; }
+
+    .roadmap-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: 23px;
+      background: var(--surface);
+    }
+
+    .roadmap-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: var(--surface2);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .roadmap-content { flex: 1; min-width: 0; }
+    .roadmap-item h3 { font-size: 15px; letter-spacing: 0; margin: 1px 0 5px; }
+    .roadmap-item p { color: var(--muted); font-size: 13px; margin: 0; }
+
+    .status {
+      display: inline-flex;
+      margin-top: 9px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .status.active { color: var(--accent); }
+
+    .tester-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(25px, 5vw, 48px);
+      border: 1px solid #4e875a;
+      border-radius: 32px;
+      background:
+        radial-gradient(ellipse at 95% 0%, #7ae88c20, transparent 45%),
+        var(--surface);
+    }
+
+    .tester-card h2 { max-width: 620px; }
+
+    .tester-card > p {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .release-banner {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin: 25px 0;
+      padding: 18px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+    }
+
+    .release-icon {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      display: grid;
+      place-items: center;
+      border-radius: 17px;
+      background: var(--surface3);
+      font-size: 22px;
+    }
+
+    .release-banner strong { display: block; font-size: 15px; }
+    .release-banner small { color: var(--muted); font-size: 12px; }
+
+    .code-card {
+      overflow: hidden;
+      background: var(--code);
+      border: 1px solid var(--border);
+      border-radius: 23px;
+    }
+
+    .code-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .copy-button {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      color: var(--text);
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 19px;
+      overflow-x: auto;
+      color: #c9f5d1;
+      font: 12px/1.9 Consolas, "Courier New", monospace;
+    }
+
+    .contributors-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .person {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .avatar {
+      flex-shrink: 0;
+      width: 57px;
+      height: 57px;
+      border-radius: 21px;
+      display: grid;
+      place-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      font: 700 22px "Space Grotesk", sans-serif;
+    }
+
+    .person h3 { margin: 0 0 4px; font-size: 16px; letter-spacing: 0; }
+    .person p { margin: 0; font-size: 12px; color: var(--muted); }
+    .person a { color: var(--accent); }
+
+    .cta {
+      padding: 34px;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+    }
+
+    .cta h2 { font-size: 27px; margin: 0 0 9px; }
+    .cta p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    footer {
+      padding: 35px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .footer-inner p { color: var(--muted); font-size: 12px; margin: 0; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 19px; font-size: 12px; color: var(--muted); }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+      .reveal { opacity: 1; transform: none; }
+    }
+
+    @media (max-width: 850px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero { padding-top: 65px; }
+      .hero-copy { max-width: 650px; }
+      .device-art { min-height: 370px; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .nav-links {
+        display: none;
+        position: absolute;
+        top: 76px;
+        left: 0;
+        right: 0;
+        padding: 18px 22px 24px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 12px 4px; }
+      .menu-button { display: grid; }
+    }
+
+    @media (max-width: 540px) {
+      .container { width: min(100% - 30px, 1120px); }
+      .brand { font-size: 16px; }
+      .hero { padding: 53px 0 40px; }
+      h1 { font-size: 46px; }
+      .device-art { min-height: 340px; }
+      .phone { transform: scale(.9) rotate(-7deg); }
+      section { padding: 55px 0; }
+      .feature-grid, .contributors-grid { grid-template-columns: 1fr; }
+      .card { padding: 21px; }
+      .floating-chip { font-size: 10px; padding: 10px; }
+      .chip-one { right: -2px; }
+      .chip-two { left: -2px; }
+      .release-banner { align-items: flex-start; }
+      .cta { flex-direction: column; align-items: flex-start; padding: 25px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+      .roadmap-item { padding: 15px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="topbar">
+    <nav class="container" aria-label="Main navigation">
+      <a class="brand" href="#home" aria-label="Fogos Linux home">
+        <span class="brand-mark">
+          <!-- Original geometric phone/leaf logo -->
+          <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <rect x="7" y="2.8" width="18" height="26.4" rx="5.2"
+              stroke="currentColor" stroke-width="2"/>
+            <path d="M12 11.5c0-3 7.5-4 8-4-1 4-3.1 6-6 6"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M12 19c2-3 4-4 8-5"
+              stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="16" cy="25.2" r="1" fill="currentColor"/>
+          </svg>
+        </span>
+        <span>Fogos Linux</span>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <a href="#about">About</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#testing">Testing</a>
+        <a href="#contributors">Contributors</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="icon-button" id="themeToggle"
+          aria-label="Switch color theme" title="Switch theme">☀</button>
+        <button class="icon-button menu-button" id="menuToggle"
+          aria-label="Toggle navigation" aria-expanded="false">☰</button>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">
+            <span class="pulse"></span>
+            Community-driven port
+          </div>
+
+          <h1>
+            Linux on<br>
+            <span class="accent">Motorola Fogos.</span>
+          </h1>
+
+          <p class="hero-copy">
+            Bringing the freedom of postmarketOS to the Motorola Moto G45 5G.
+            A community-driven port built around Linux, open development,
+            and the road toward a proper mobile Linux experience.
+          </p>
+
+          <div class="actions">
+            <a class="btn btn-primary"
+              href="https://github.com/reyaansh72/pmos-motorola-fogos"
+              target="_blank" rel="noopener noreferrer">
+              ↗ View repository
+            </a>
+            <a class="btn btn-secondary" href="#testing">
+              ◈ Testing status
+            </a>
+          </div>
+
+          <div class="hero-note">
+            <span class="pulse"></span>
+            Work in progress · Not ready for daily use
+          </div>
+        </div>
+
+        <div class="device-art" aria-label="Illustration of a Linux smartphone">
+          <div class="orb"></div>
+
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-notch"></div>
+              <div class="phone-logo">F</div>
+              <strong>Fogos Linux</strong>
+              <small>Freedom in your hands.</small>
+            </div>
+          </div>
+
+          <div class="floating-chip chip-one">🐧 Linux-powered vision</div>
+          <div class="floating-chip chip-two">🌿 Open source, open future</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">The project</span>
+          <h2>A little more freedom.</h2>
+          <p>
+            A work-in-progress postmarketOS device port. Explore the current
+            package work, follow development, and help improve support for Fogos.
+          </p>
+        </div>
+
+        <div class="grid stats-grid">
+          <article class="card reveal">
+            <div class="stat-label">Target device</div>
+            <div class="stat-value">Fogos</div>
+            <div class="stat-note">Moto G45 5G</div>
+          </article>
+
+          <article class="card reveal">
+            <div class="stat-label">Kernel base</div>
+            <div class="stat-value">5.4.302</div>
+            <div class="stat-note">Downstream kernel fork</div>
+          </article>
+
+          <article class="card reveal">
+            <div class="stat-label">Architecture</div>
+            <div class="stat-value">ARM64</div>
+            <div class="stat-note">aarch64</div>
+          </article>
+
+          <article class="card reveal">
+            <div class="stat-label">Project status</div>
+            <div class="stat-value">WIP</div>
+            <div class="stat-note">Hardware validation pending</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">What we're building</span>
+          <h2>Small steps. Real progress.</h2>
+          <p>
+            The groundwork is being developed in the open. Actual device
+            functionality still needs to be verified on working hardware.
+          </p>
+        </div>
+
+        <div class="grid feature-grid">
+          <article class="card reveal">
+            <div class="icon-box">⌘</div>
+            <h3>Kernel development</h3>
+            <p>
+              A downstream Motorola kernel fork, package configuration,
+              kernel config work, and device-specific fixes.
+            </p>
+          </article>
+
+          <article class="card reveal">
+            <div class="icon-box">▱</div>
+            <h3>Device integration</h3>
+            <p>
+              Device metadata, initramfs module lists, boot settings,
+              and the packaging needed to prepare a port.
+            </p>
+          </article>
+
+          <article class="card reveal">
+            <div class="icon-box">◈</div>
+            <h3>Mobile Linux</h3>
+            <p>
+              The goal is a usable postmarketOS experience, with a
+              mobile-friendly Linux interface and hardware support.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">Development roadmap</span>
+          <h2>Where things stand.</h2>
+          <p>
+            Package development is not the same as a boot-tested phone.
+            Here's the current distinction.
+          </p>
+        </div>
+
+        <div class="roadmap">
+          <article class="roadmap-item reveal">
+            <div class="roadmap-icon">✓</div>
+            <div class="roadmap-content">
+              <h3>Repository and package groundwork</h3>
+              <p>
+                Device and kernel packaging, source tracking, README,
+                and initial configuration work.
+              </p>
+              <span class="status active">Package work underway</span>
+            </div>
+          </article>
+
+          <article class="roadmap-item reveal">
+            <div class="roadmap-icon">⌘</div>
+            <div class="roadmap-content">
+              <h3>Kernel and initramfs validation</h3>
+              <p>
+                Check kernel builds, patch application, required modules,
+                generated artifacts, and boot configuration.
+              </p>
+              <span class="status">Validation needed</span>
+            </div>
+          </article>
+
+          <article class="roadmap-item reveal">
+            <div class="roadmap-icon">▱</div>
+            <div class="roadmap-content">
+              <h3>First hardware boot</h3>
+              <p>
+                Test the actual device, inspect boot logs, and verify
+                whether the kernel reaches userspace.
+              </p>
+              <span class="status">Pending hardware testing</span>
+            </div>
+          </article>
+
+          <article class="roadmap-item reveal">
+            <div class="roadmap-icon">✳</div>
+            <div class="roadmap-content">
+              <h3>Mobile hardware functionality</h3>
+              <p>
+                Investigate and validate display, touch, networking,
+                charging, suspend, and other device-specific features.
+              </p>
+              <span class="status">Not yet confirmed</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="testing">
+      <div class="container">
+        <div class="tester-card reveal">
+          <span class="kicker">For testers and developers</span>
+          <h2>Want to try Fogos Linux?</h2>
+
+          <p>
+            We're preparing the project, but there isn't a verified,
+            ready-to-test release available yet. Follow the repository
+            for development updates and future test builds.
+          </p>
+
+          <div class="release-banner">
+            <div class="release-icon">⏳</div>
+            <div>
+              <strong>Releases Coming Soon For Testers</strong>
+              <small>
+                No public test release is announced here yet.
+                Check the repository for the latest status.
+              </small>
+            </div>
+          </div>
+
+          <div class="actions">
+            <a class="btn btn-primary"
+              href="https://github.com/reyaansh72/pmos-motorola-fogos"
+              target="_blank" rel="noopener noreferrer">
+              ↗ Follow development
+            </a>
+
+            <a class="btn btn-secondary"
+              href="https://github.com/reyaansh72/pmos-motorola-fogos/issues"
+              target="_blank" rel="noopener noreferrer">
+              Report an issue
+            </a>
+          </div>
+
+          <p style="font-size:12px;margin-top:18px">
+            Please don't flash experimental images onto your daily-use
+            phone. Wait for documented test instructions and known limitations.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="kernel">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">Under the hood</span>
+          <h2>Built in the open.</h2>
+          <p>
+            The device package and kernel source are maintained in separate
+            repositories, making it easier to follow each part of development.
+          </p>
+        </div>
+
+        <div class="grid feature-grid">
+          <article class="card reveal">
+            <div class="icon-box">⌘</div>
+            <h3>Device package</h3>
+            <p>
+              Device information, kernel boot arguments, and initramfs modules.
+            </p>
+            <div class="actions">
+              <a class="btn btn-secondary"
+                href="https://github.com/reyaansh72/pmos-motorola-fogos/tree/main/device-motorola-fogos"
+                target="_blank" rel="noopener noreferrer">
+                Browse device files ↗
+              </a>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="icon-box">⌁</div>
+            <h3>Kernel package</h3>
+            <p>
+              APKBUILD, kernel configuration, packaging logic,
+              and compatibility patches.
+            </p>
+            <div class="actions">
+              <a class="btn btn-secondary"
+                href="https://github.com/reyaansh72/pmos-motorola-fogos/tree/main/linux-motorola-fogos"
+                target="_blank" rel="noopener noreferrer">
+                Browse package ↗
+              </a>
+            </div>
+          </article>
+
+          <article class="card reveal">
+            <div class="icon-box">⌬</div>
+            <h3>Kernel source</h3>
+            <p>
+              The Motorola SM6375 kernel fork and its postmarketOS port branch.
+            </p>
+            <div class="actions">
+              <a class="btn btn-secondary"
+                href="https://github.com/reyaansh72/android_kernel_motorola_sm6375"
+                target="_blank" rel="noopener noreferrer">
+                View source ↗
+              </a>
+            </div>
+          </article>
+        </div>
+
+        <div class="code-card reveal" style="margin-top:20px">
+          <div class="code-top">
+            <span>Project details</span>
+            <button class="copy-button" id="copyInfo">Copy details</button>
+          </div>
+          <pre id="projectInfo">Device: Motorola Moto G45 5G
+Codename: fogos
+Architecture: aarch64
+Kernel version: 5.4.302
+Kernel branch: postmarketos-motorola-fogos
+Status: Work in progress; hardware testing pending</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="contributors">
+      <div class="container">
+        <div class="section-heading reveal">
+          <span class="kicker">Community</span>
+          <h2>Built by contributors.</h2>
+          <p>
+            Open-source development gets better when people share fixes,
+            review code, document discoveries, and test responsibly.
+          </p>
+        </div>
+
+        <div class="grid contributors-grid">
+          <article class="card person reveal">
+            <div class="avatar">R</div>
+            <div>
+              <h3>Reyaansh</h3>
+              <p>Project maintainer · Device and kernel packaging</p>
+              <p style="margin-top:7px">
+                <a href="https://github.com/reyaansh72"
+                   target="_blank" rel="noopener noreferrer">@reyaansh72 ↗</a>
+              </p>
+            </div>
+          </article>
+
+          <article class="card person reveal">
+            <div class="avatar">A</div>
+            <div>
+              <h3>aani150520-debug</h3>
+              <p>Contributor · Kernel command-line debugging options</p>
+              <p style="margin-top:7px">
+                <a href="https://github.com/aani150520-debug"
+                   target="_blank" rel="noopener noreferrer">@aani150520-debug ↗</a>
+              </p>
+            </div>
+          </article>
+        </div>
+
+        <div class="cta reveal" style="margin-top:22px">
+          <div>
+            <h2>Want to contribute?</h2>
+            <p>
+              Review the code, report an issue, or help improve device support.
+              Every useful contribution matters.
+            </p>
+          </div>
+          <a class="btn btn-primary"
+            href="https://github.com/reyaansh72/pmos-motorola-fogos"
+            target="_blank" rel="noopener noreferrer">
+            Explore on GitHub ↗
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div>
+        <a class="brand" href="#home">
+          <span class="brand-mark">
+            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect x="7" y="2.8" width="18" height="26.4" rx="5.2"
+                stroke="currentColor" stroke-width="2"/>
+              <path d="M12 11.5c0-3 7.5-4 8-4-1 4-3.1 6-6 6"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M12 19c2-3 4-4 8-5"
+                stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="16" cy="25.2" r="1" fill="currentColor"/>
+            </svg>
+          </span>
+          <span>Fogos Linux</span>
+        </a>
+        <p style="margin-top:12px">
+          An independent community port. Not an official Motorola project.
+        </p>
+        <p style="margin-top:5px">
+          postmarketOS is an independent open-source project.
+        </p>
+      </div>
+
+      <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#testing">Testing</a>
+        <a href="https://github.com/reyaansh72/pmos-motorola-fogos"
+           target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      </div>
+    </div>
+
+    <div class="container" style="margin-top:25px">
+      <p>© <span id="year"></span> Fogos Linux community. Built with care and open source.</p>
+    </div>
+  </footer>
+
+  <script>
+    const root = document.documentElement;
+    const themeToggle = document.getElementById("themeToggle");
+    const menuToggle = document.getElementById("menuToggle");
+    const navLinks = document.getElementById("navLinks");
+
+    // Theme preference
+    let savedTheme = null;
+
+    try {
+      savedTheme = localStorage.getItem("fogos-theme");
+    } catch (_) {}
+
+    if (savedTheme === "light" || savedTheme === "dark") {
+      root.dataset.theme = savedTheme;
+    }
+
+    function updateThemeButton() {
+      const light = root.dataset.theme === "light";
+      themeToggle.textContent = light ? "☾" : "☀";
+      themeToggle.setAttribute(
+        "aria-label",
+        light ? "Switch to dark theme" : "Switch to light theme"
+      );
+      document.querySelector('meta[name="theme-color"]')
+        .setAttribute("content", light ? "#f4f8f1" : "#10251a");
+    }
+
+    themeToggle.addEventListener("click", () => {
+      root.dataset.theme =
+        root.dataset.theme === "dark" ? "light" : "dark";
+
+      try {
+        localStorage.setItem("fogos-theme", root.dataset.theme);
+      } catch (_) {}
+
+      updateThemeButton();
+    });
+
+    updateThemeButton();
+
+    // Mobile navigation
+    menuToggle.addEventListener("click", () => {
+      const open = navLinks.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(open));
+      menuToggle.textContent = open ? "✕" : "☰";
+    });
+
+    navLinks.querySelectorAll("a").forEach(link => {
+      link.addEventListener("click", () => {
+        navLinks.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰";
+      });
+    });
+
+    // Subtle reveal animations, with a fallback for reduced motion
+    const revealItems = document.querySelectorAll(".reveal");
+
+    if ("IntersectionObserver" in window &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      revealItems.forEach(item => observer.observe(item));
+    } else {
+      revealItems.forEach(item => item.classList.add("visible"));
+    }
+
+    // Copy project details
+    document.getElementById("copyInfo").addEventListener("click", async event => {
+      const button = event.currentTarget;
+      const content = document.getElementById("projectInfo").textContent;
+
+      try {
+        await navigator.clipboard.writeText(content);
+        button.textContent = "Copied!";
+      } catch (_) {
+        const area = document.createElement("textarea");
+        area.value = content;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+
+        try {
+          const copied = document.execCommand("copy");
+          button.textContent = copied ? "Copied!" : "Copy unavailable";
+        } catch (_) {
+          button.textContent = "Copy unavailable";
+        }
+
+        area.remove();
+      }
+
+      setTimeout(() => button.textContent = "Copy details", 1800);
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
