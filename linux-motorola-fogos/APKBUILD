@@ -1,6 +1,6 @@
 # Kernel config based on: arch/arm64/configs/vendor/holi-qgki_defconfig
 
-maintainer="reyaansh72"
+maintainer="reyaansh72 <bhavya150520@gmail.com>"
 pkgname=linux-motorola-fogos
 pkgver=5.4.302
 pkgrel=0
