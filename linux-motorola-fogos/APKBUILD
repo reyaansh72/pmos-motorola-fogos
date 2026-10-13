@@ -2,7 +2,7 @@
 
 maintainer="reyaansh72"
 pkgname=linux-motorola-fogos
-pkgver=3.x.x
+pkgver=5.4.302
 pkgrel=0
 _branch="postmarketos-motorola-fogos"
 _commit=6ad40bbece9c25275752c07e1fb9320c37425fe5
