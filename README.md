@@ -3,7 +3,7 @@
 Downstream postmarketOS device and kernel packages for the
 Motorola Moto G45 5G, codename **fogos**.
 
-> **Status: Work in progress.** This port is under development :)
+> **Status: Work in progress :)**
 
 ## Repository contents
 
