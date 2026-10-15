@@ -1,4 +1,4 @@
-name: Update Kernel and Device Checksums
+name: Update Fogos Checksums
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: update-checksums-${{ github.ref }}
+  group: fogos-checksums-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -20,6 +20,7 @@ jobs:
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
+          persist-credentials: true
 
       - name: Install dependencies
         run: |
@@ -30,28 +31,48 @@ jobs:
             python3-venv \
             git \
             build-essential \
-            alpine-sdk \
-            abuild \
-            sudo
+            sudo \
+            wget \
+            curl \
+            ca-certificates \
+            xz-utils \
+            tar \
+            gzip \
+            bzip2 \
+            coreutils \
+            file \
+            patch \
+            rsync
 
       - name: Clone pmbootstrap
         run: |
-          git clone https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git \
+          git clone \
+            https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git \
             "$RUNNER_TEMP/pmbootstrap"
 
-      - name: Install pmbootstrap Python dependencies
+      - name: Install pmbootstrap dependencies
         run: |
           python3 -m venv --system-site-packages \
             "$RUNNER_TEMP/pmbootstrap-venv"
 
-          "$RUNNER_TEMP/pmbootstrap-venv/bin/pip" install \
-            -r "$RUNNER_TEMP/pmbootstrap/requirements.txt"
+          if [ -f "$RUNNER_TEMP/pmbootstrap/requirements.txt" ]; then
+            "$RUNNER_TEMP/pmbootstrap-venv/bin/pip" install \
+              -r "$RUNNER_TEMP/pmbootstrap/requirements.txt"
+          fi
+
+      - name: Show pmbootstrap version
+        run: |
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" --version
 
       - name: Configure pmbootstrap
+        env:
+          PMBOOTSTRAP_WORK: ${{ runner.temp }}/pmbootstrap-work
         run: |
+          mkdir -p "$PMBOOTSTRAP_WORK"
+
           python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" init \
             --aports "$GITHUB_WORKSPACE" \
-            --work "$RUNNER_TEMP/pmbootstrap-work" \
+            --work "$PMBOOTSTRAP_WORK" \
             --mirror-pmOS https://mirror.postmarketos.org/postmarketos/
 
       - name: Update kernel checksums
@@ -73,15 +94,18 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Stage only the two intended APKBUILD files.
-          git add -- 'APKBUILD' 2>/dev/null || true
-          git add -u
+          # Stage the two package APKBUILD files only.
+          git add -- \
+            ':(glob)**/linux-motorola-fogos/APKBUILD' \
+            ':(glob)**/device-motorola-fogos/APKBUILD' \
+            ':(glob)APKBUILD'
 
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No checksum changes detected."
             exit 0
           fi
 
+          # Find the highest existing checksum commit number.
           last_number=$(
             git log --all --format='%s' |
               sed -nE \
@@ -96,6 +120,7 @@ jobs:
           commit_message="update(checksums): Updated Checksums #${next_number}"
 
           git commit -m "$commit_message"
+
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
-          echo "Pushed: $commit_message"
+          echo "Successfully pushed: $commit_message"
