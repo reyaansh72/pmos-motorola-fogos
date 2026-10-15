@@ -1,4 +1,3 @@
-```yaml
 name: Update Kernel and Device Checksums
 
 on:
@@ -100,4 +99,3 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
           echo "Pushed: $commit_message"
-```
