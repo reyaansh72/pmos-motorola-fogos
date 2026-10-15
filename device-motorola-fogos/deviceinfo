@@ -8,6 +8,7 @@ deviceinfo_codename="motorola-fogos"
 deviceinfo_year="2024"
 deviceinfo_arch="aarch64"
 deviceinfo_chassis="handset"
+deviceinfo_external_storage="true"
 
 # Initramfs
 deviceinfo_initfs_compression="gzip"
