@@ -15,14 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Fogos repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
       - name: Install dependencies
+        shell: bash
         run: |
+          set -euo pipefail
+
           sudo apt-get update
           sudo apt-get install -y \
             python3 \
@@ -44,12 +47,15 @@ jobs:
             expect
 
       - name: Clone pmbootstrap
+        shell: bash
         run: |
+          set -euo pipefail
+
           git clone \
             https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git \
             "$RUNNER_TEMP/pmbootstrap"
 
-      - name: Install pmbootstrap dependencies
+      - name: Install pmbootstrap Python dependencies
         shell: bash
         run: |
           set -euo pipefail
@@ -62,13 +68,18 @@ jobs:
               -r "$RUNNER_TEMP/pmbootstrap/requirements.txt"
           fi
 
-      - name: Clone pmaports
+          echo "$RUNNER_TEMP/pmbootstrap-venv/bin" >> "$GITHUB_PATH"
+
+      - name: Clone upstream pmaports
+        shell: bash
         run: |
+          set -euo pipefail
+
           git clone --depth 1 \
             https://gitlab.postmarketos.org/postmarketOS/pmaports.git \
             "$RUNNER_TEMP/pmaports"
 
-      - name: Copy Fogos packages into downstream
+      - name: Copy Fogos packages to device/downstream
         shell: bash
         run: |
           set -euo pipefail
@@ -79,13 +90,16 @@ jobs:
           mkdir -p "$DEST"
 
           for pkg in linux-motorola-fogos device-motorola-fogos; do
-            apkbuild="$(find "$GITHUB_WORKSPACE" \
-              -type f -path "*/$pkg/APKBUILD" \
-              -not -path '*/.git/*' \
-              -print -quit)"
+            apkbuild="$(
+              find "$GITHUB_WORKSPACE" \
+                -type f \
+                -path "*/$pkg/APKBUILD" \
+                -not -path '*/.git/*' \
+                -print -quit
+            )"
 
             if [ -z "$apkbuild" ]; then
-              echo "::error::APKBUILD not found for $pkg"
+              echo "::error::Could not find APKBUILD for $pkg"
               exit 1
             fi
 
@@ -103,6 +117,11 @@ jobs:
               echo "TARGET_DEVICE_DIR=$target_dir" >> "$GITHUB_ENV"
             fi
           done
+
+          echo "Packages copied to:"
+          printf '%s\n' \
+            "$DEST/linux-motorola-fogos" \
+            "$DEST/device-motorola-fogos"
 
       - name: Initialize pmbootstrap non-interactively
         shell: bash
@@ -129,80 +148,97 @@ jobs:
           spawn python3 $pmb -c $config init
 
           expect {
-              -re {Work path.*\]: *$} {
+              -re {Work path} {
+                  expect -re {:\s*$}
                   send -- "$work\r"
                   exp_continue
               }
-              -re {pmaports path.*\]: *$} {
+              -re {pmaports path} {
+                  expect -re {:\s*$}
                   send -- "$aports\r"
                   exp_continue
               }
-              -re {Channel \[.*\]: *$} {
+              -re {Channel} {
+                  expect -re {:\s*$}
                   send -- "edge\r"
                   exp_continue
               }
-              -re {Vendor \[.*\]: *$} {
+              -re {Vendor} {
+                  expect -re {:\s*$}
                   send -- "generic\r"
                   exp_continue
               }
-              -re {Device codename \[.*\]: *$} {
+              -re {Device codename} {
+                  expect -re {:\s*$}
                   send -- "x86_64\r"
                   exp_continue
               }
-              -re {Kernel \[.*\]: *$} {
+              -re {Kernel} {
+                  expect -re {:\s*$}
                   send -- "stable\r"
                   exp_continue
               }
-              -re {Username \[.*\]: *$} {
+              -re {Username} {
+                  expect -re {:\s*$}
                   send -- "runner\r"
                   exp_continue
               }
-              -re {Provider \[default\]: *$} {
+              -re {Provider} {
+                  expect -re {:\s*$}
                   send -- "\r"
                   exp_continue
               }
-              -re {User interface \[.*\]: *$} {
+              -re {User interface|UI \[} {
+                  expect -re {:\s*$}
                   send -- "console\r"
                   exp_continue
               }
-              -re {service manager.*\]: *$} {
+              -re {service manager} {
+                  expect -re {:\s*$}
                   send -- "openrc\r"
                   exp_continue
               }
-              -re {Change them\? \(y/n\).*$} {
+              -re {Change them\?} {
+                  expect -re {:\s*$}
                   send -- "n\r"
                   exp_continue
               }
-              -re {Extra packages \[.*\]: *$} {
+              -re {Extra packages} {
+                  expect -re {:\s*$}
                   send -- "none\r"
                   exp_continue
               }
-              -re {Use this timezone.*\? \(y/n\).*$} {
+              -re {Use this timezone} {
+                  expect -re {:\s*$}
                   send -- "y\r"
                   exp_continue
               }
-              -re {Locale \[.*\]: *$} {
+              -re {Locale} {
+                  expect -re {:\s*$}
                   send -- "en_US\r"
                   exp_continue
               }
-              -re {Device hostname.*\]: *$} {
+              -re {Device hostname} {
+                  expect -re {:\s*$}
                   send -- "fogos-checksums\r"
                   exp_continue
               }
-              -re {Build outdated packages.*\? \(y/n\).*$} {
+              -re {Build outdated packages} {
+                  expect -re {:\s*$}
                   send -- "n\r"
                   exp_continue
               }
-              -re {Zap existing chroots.*\? \(y/n\).*$} {
+              -re {Zap existing chroots} {
+                  expect -re {:\s*$}
                   send -- "y\r"
                   exp_continue
               }
               eof {
-                  catch wait result
+                  set result [wait]
                   exit [lindex $result 3]
               }
               timeout {
-                  puts stderr "Timed out waiting for a pmbootstrap init prompt."
+                  puts stderr "\nERROR: Timed out waiting for a pmbootstrap prompt."
                   exit 1
               }
           }
@@ -214,14 +250,29 @@ jobs:
             "$WORK" \
             "$APORTS"
 
-      - name: Update kernel checksums
+      - name: Verify pmbootstrap configuration
+        shell: bash
         run: |
+          set -euo pipefail
+
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
+            -c "$RUNNER_TEMP/pmbootstrap.cfg" \
+            config
+
+      - name: Update kernel checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+
           python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
             -c "$RUNNER_TEMP/pmbootstrap.cfg" \
             checksum linux-motorola-fogos
 
       - name: Update device checksums
+        shell: bash
         run: |
+          set -euo pipefail
+
           python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
             -c "$RUNNER_TEMP/pmbootstrap.cfg" \
             checksum device-motorola-fogos
@@ -231,11 +282,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          cp "$TARGET_KERNEL_DIR/APKBUILD" "$SOURCE_KERNEL_DIR/APKBUILD"
-          cp "$TARGET_DEVICE_DIR/APKBUILD" "$SOURCE_DEVICE_DIR/APKBUILD"
+          cp "$TARGET_KERNEL_DIR/APKBUILD" \
+            "$SOURCE_KERNEL_DIR/APKBUILD"
 
-      - name: Commit and push checksum updates
+          cp "$TARGET_DEVICE_DIR/APKBUILD" \
+            "$SOURCE_DEVICE_DIR/APKBUILD"
+
+          echo "Updated APKBUILD files:"
+          git diff -- \
+            "$SOURCE_KERNEL_DIR/APKBUILD" \
+            "$SOURCE_DEVICE_DIR/APKBUILD"
+
+      - name: Commit and push changes
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -248,17 +309,17 @@ jobs:
             "$SOURCE_DEVICE_DIR/APKBUILD"
 
           if git diff --cached --quiet; then
-            echo "No checksum changes detected."
+            echo "No checksum changes detected. Nothing to commit."
             exit 0
           fi
 
-          last_number=$(
+          last_number="$(
             git log --format='%s' |
               sed -nE \
                 's/^update\(checksums\): Updated Checksums #([0-9]+)$/\1/p' |
               sort -n |
               tail -n 1
-          )
+          )"
 
           last_number="${last_number:-0}"
           next_number=$((last_number + 1))
@@ -268,4 +329,4 @@ jobs:
           git commit -m "$commit_message"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
-          echo "Pushed: $commit_message"
+          echo "Successfully pushed: $commit_message"
