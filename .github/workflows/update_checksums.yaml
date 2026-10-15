@@ -1,0 +1,103 @@
+```yaml
+name: Update Kernel and Device Checksums
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-checksums-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update-checksums:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 \
+            python3-pip \
+            python3-venv \
+            git \
+            build-essential \
+            alpine-sdk \
+            abuild \
+            sudo
+
+      - name: Clone pmbootstrap
+        run: |
+          git clone https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git \
+            "$RUNNER_TEMP/pmbootstrap"
+
+      - name: Install pmbootstrap Python dependencies
+        run: |
+          python3 -m venv --system-site-packages \
+            "$RUNNER_TEMP/pmbootstrap-venv"
+
+          "$RUNNER_TEMP/pmbootstrap-venv/bin/pip" install \
+            -r "$RUNNER_TEMP/pmbootstrap/requirements.txt"
+
+      - name: Configure pmbootstrap
+        run: |
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" init \
+            --aports "$GITHUB_WORKSPACE" \
+            --work "$RUNNER_TEMP/pmbootstrap-work" \
+            --mirror-pmOS https://mirror.postmarketos.org/postmarketos/
+
+      - name: Update kernel checksums
+        run: |
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" checksum \
+            linux-motorola-fogos
+
+      - name: Update device checksums
+        run: |
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" checksum \
+            device-motorola-fogos
+
+      - name: Commit and push checksum updates
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage only the two intended APKBUILD files.
+          git add -- 'APKBUILD' 2>/dev/null || true
+          git add -u
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          last_number=$(
+            git log --all --format='%s' |
+              sed -nE \
+                's/^update\(checksums\): Updated Checksums #([0-9]+)$/\1/p' |
+              sort -n |
+              tail -n 1
+          )
+
+          last_number="${last_number:-0}"
+          next_number=$((last_number + 1))
+
+          commit_message="update(checksums): Updated Checksums #${next_number}"
+
+          git commit -m "$commit_message"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+          echo "Pushed: $commit_message"
+```
