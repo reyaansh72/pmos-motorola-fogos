@@ -1,3 +1,4 @@
+
 name: Update Fogos Checksums
 
 on:
@@ -15,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout current repository
+      - name: Checkout Fogos repository
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
@@ -49,7 +50,10 @@ jobs:
             "$RUNNER_TEMP/pmbootstrap"
 
       - name: Install pmbootstrap dependencies
+        shell: bash
         run: |
+          set -euo pipefail
+
           python3 -m venv --system-site-packages \
             "$RUNNER_TEMP/pmbootstrap-venv"
 
@@ -58,19 +62,121 @@ jobs:
               -r "$RUNNER_TEMP/pmbootstrap/requirements.txt"
           fi
 
-      - name: Show pmbootstrap version
+      - name: Clone pmaports
         run: |
-          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" --version
+          git clone --depth 1 \
+            https://gitlab.postmarketos.org/postmarketOS/pmaports.git \
+            "$RUNNER_TEMP/pmaports"
+
+      - name: Prepare Fogos packages in pmaports
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          APORTS="$RUNNER_TEMP/pmaports"
+          DEST="$APORTS/device/downstream"
+
+          mkdir -p "$DEST"
+
+          for pkg in linux-motorola-fogos device-motorola-fogos; do
+            apkbuild="$(find "$GITHUB_WORKSPACE" \
+              -type f -path "*/$pkg/APKBUILD" \
+              -not -path '*/.git/*' \
+              -print -quit)"
+
+            if [ -z "$apkbuild" ]; then
+              echo "::error::Could not find APKBUILD for $pkg"
+              exit 1
+            fi
+
+            source_dir="$(dirname "$apkbuild")"
+            target_dir="$DEST/$pkg"
+
+            mkdir -p "$target_dir"
+            cp -a "$source_dir/." "$target_dir/"
+
+            if [ "$pkg" = "linux-motorola-fogos" ]; then
+              echo "SOURCE_KERNEL_DIR=$source_dir" >> "$GITHUB_ENV"
+              echo "TARGET_KERNEL_DIR=$target_dir" >> "$GITHUB_ENV"
+            else
+              echo "SOURCE_DEVICE_DIR=$source_dir" >> "$GITHUB_ENV"
+              echo "TARGET_DEVICE_DIR=$target_dir" >> "$GITHUB_ENV"
+            fi
+
+            echo "Prepared $pkg in device/downstream/$pkg"
+          done
+
+      - name: Create pmbootstrap config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CONFIG="$RUNNER_TEMP/pmbootstrap.cfg"
+          WORK="$RUNNER_TEMP/pmbootstrap-work"
+          APORTS="$RUNNER_TEMP/pmaports"
+
+          mkdir -p "$WORK"
+
+          cat > "$CONFIG" <<EOF
+          [pmbootstrap]
+          aports = $APORTS
+          auto_zap_misconfigured_chroots = no
+          boot_size = 512
+          build_default_device_arch = False
+          build_pkgs_on_install = True
+          ccache_size = 5G
+          device = generic-x86_64
+          extra_packages = none
+          extra_space = 0
+          hostname =
+          is_default_channel = False
+          jobs = 2
+          kernel = stable
+          keymap =
+          locale = en_US.UTF-8
+          qemu_redir_stdio = False
+          service_manager = openrc
+          ssh_key_glob = ~/.ssh/*.pub
+          ssh_keys = False
+          sudo_timer = False
+          timezone = Asia/Kolkata
+          ui = console
+          ui_extras = False
+          user = runner
+          work = $WORK
+
+          [providers]
+
+          [mirrors]
+          alpine = http://cdn.alpinelinux.org/
+          alpine_custom = none
+          pmaports = http://mirror.postmarketos.org/postmarketos/
+          pmaports_custom = none
+          systemd = http://mirror.postmarketos.org/postmarketos/extra-repos/systemd/
+          systemd_custom = none
+          EOF
+
+          echo "PMBOOTSTRAP_CONFIG=$CONFIG" >> "$GITHUB_ENV"
 
       - name: Update kernel checksums
         run: |
-          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" checksum \
-            linux-motorola-fogos
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
+            -c "$PMBOOTSTRAP_CONFIG" \
+            checksum linux-motorola-fogos
 
       - name: Update device checksums
         run: |
-          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" checksum \
-            device-motorola-fogos
+          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
+            -c "$PMBOOTSTRAP_CONFIG" \
+            checksum device-motorola-fogos
+
+      - name: Copy updated APKBUILD files back
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cp "$TARGET_KERNEL_DIR/APKBUILD" "$SOURCE_KERNEL_DIR/APKBUILD"
+          cp "$TARGET_DEVICE_DIR/APKBUILD" "$SOURCE_DEVICE_DIR/APKBUILD"
 
       - name: Commit and push checksum updates
         shell: bash
@@ -81,19 +187,17 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Stage only the two package APKBUILD files.
           git add -- \
-            ':(glob)**/linux-motorola-fogos/APKBUILD' \
-            ':(glob)**/device-motorola-fogos/APKBUILD'
+            "$SOURCE_KERNEL_DIR/APKBUILD" \
+            "$SOURCE_DEVICE_DIR/APKBUILD"
 
           if git diff --cached --quiet; then
             echo "No checksum changes detected."
             exit 0
           fi
 
-          # Find the highest existing checksum commit number.
           last_number=$(
-            git log --all --format='%s' |
+            git log --format='%s' |
               sed -nE \
                 's/^update\(checksums\): Updated Checksums #([0-9]+)$/\1/p' |
               sort -n |
@@ -108,4 +212,4 @@ jobs:
           git commit -m "$commit_message"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
-          echo "Successfully pushed: $commit_message"
+          echo "Pushed: $commit_message"
