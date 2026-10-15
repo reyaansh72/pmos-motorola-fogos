@@ -40,7 +40,8 @@ jobs:
             coreutils \
             file \
             patch \
-            rsync
+            rsync \
+            expect
 
       - name: Clone pmbootstrap
         run: |
@@ -103,7 +104,7 @@ jobs:
             fi
           done
 
-      - name: Create pmbootstrap config
+      - name: Initialize pmbootstrap non-interactively
         shell: bash
         run: |
           set -euo pipefail
@@ -112,66 +113,117 @@ jobs:
           WORK="$RUNNER_TEMP/pmbootstrap-work"
           APORTS="$RUNNER_TEMP/pmaports"
 
+          rm -f "$CONFIG"
           rm -rf "$WORK"
           mkdir -p "$WORK"
 
-          cat > "$CONFIG" <<EOF
-          [pmbootstrap]
-          aports = $APORTS
-          auto_zap_misconfigured_chroots = no
-          boot_size = 512
-          build_default_device_arch = False
-          build_pkgs_on_install = True
-          ccache_size = 5G
-          device = generic-x86_64
-          extra_packages = none
-          extra_space = 0
-          hostname =
-          is_default_channel = False
-          jobs = 2
-          kernel = stable
-          keymap =
-          locale = en_US.UTF-8
-          qemu_redir_stdio = False
-          service_manager = openrc
-          ssh_key_glob = ~/.ssh/*.pub
-          ssh_keys = False
-          sudo_timer = False
-          timezone = Asia/Kolkata
-          ui = console
-          ui_extras = False
-          user = runner
-          work = $WORK
+          cat > "$RUNNER_TEMP/init.exp" <<'EXPECT'
+          set timeout 900
+          log_user 1
 
-          [providers]
+          set pmb [lindex $argv 0]
+          set config [lindex $argv 1]
+          set work [lindex $argv 2]
+          set aports [lindex $argv 3]
 
-          [mirrors]
-          alpine = http://cdn.alpinelinux.org/
-          alpine_custom = none
-          pmaports = http://mirror.postmarketos.org/postmarketos/
-          pmaports_custom = none
-          systemd = http://mirror.postmarketos.org/postmarketos/extra-repos/systemd/
-          systemd_custom = none
-          EOF
+          spawn python3 $pmb -c $config init
 
-          echo "PMBOOTSTRAP_CONFIG=$CONFIG" >> "$GITHUB_ENV"
+          expect {
+              -re {Work path.*\]: *$} {
+                  send -- "$work\r"
+                  exp_continue
+              }
+              -re {pmaports path.*\]: *$} {
+                  send -- "$aports\r"
+                  exp_continue
+              }
+              -re {Channel \[.*\]: *$} {
+                  send -- "edge\r"
+                  exp_continue
+              }
+              -re {Vendor \[.*\]: *$} {
+                  send -- "generic\r"
+                  exp_continue
+              }
+              -re {Device codename \[.*\]: *$} {
+                  send -- "x86_64\r"
+                  exp_continue
+              }
+              -re {Kernel \[.*\]: *$} {
+                  send -- "stable\r"
+                  exp_continue
+              }
+              -re {Username \[.*\]: *$} {
+                  send -- "runner\r"
+                  exp_continue
+              }
+              -re {Provider \[default\]: *$} {
+                  send -- "\r"
+                  exp_continue
+              }
+              -re {User interface \[.*\]: *$} {
+                  send -- "console\r"
+                  exp_continue
+              }
+              -re {service manager.*\]: *$} {
+                  send -- "openrc\r"
+                  exp_continue
+              }
+              -re {Change them\? \(y/n\).*$} {
+                  send -- "n\r"
+                  exp_continue
+              }
+              -re {Extra packages \[.*\]: *$} {
+                  send -- "none\r"
+                  exp_continue
+              }
+              -re {Use this timezone.*\? \(y/n\).*$} {
+                  send -- "y\r"
+                  exp_continue
+              }
+              -re {Locale \[.*\]: *$} {
+                  send -- "en_US\r"
+                  exp_continue
+              }
+              -re {Device hostname.*\]: *$} {
+                  send -- "fogos-checksums\r"
+                  exp_continue
+              }
+              -re {Build outdated packages.*\? \(y/n\).*$} {
+                  send -- "n\r"
+                  exp_continue
+              }
+              -re {Zap existing chroots.*\? \(y/n\).*$} {
+                  send -- "y\r"
+                  exp_continue
+              }
+              eof {
+                  catch wait result
+                  exit [lindex $result 3]
+              }
+              timeout {
+                  puts stderr "Timed out waiting for a pmbootstrap init prompt."
+                  exit 1
+              }
+          }
+          EXPECT
 
-      - name: Initialize pmbootstrap non-interactively
-        run: |
-          python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
-            -c "$PMBOOTSTRAP_CONFIG" \
-            -y init
+          expect "$RUNNER_TEMP/init.exp" \
+            "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
+            "$CONFIG" \
+            "$WORK" \
+            "$APORTS"
 
       - name: Update kernel checksums
         run: |
           python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
-            -c "$PMBOOTSTRAP_CONFIG" \
+            -c "$RUNNER_TEMP/pmbootstrap.cfg" \
             checksum linux-motorola-fogos
 
       - name: Update device checksums
         run: |
           python3 "$RUNNER_TEMP/pmbootstrap/pmbootstrap.py" \
-            -c "$PMBOOTSTRAP_CONFIG" \
+            -c "$RUNNER_TEMP/pmbootstrap.cfg" \
             checksum device-motorola-fogos
 
       - name: Copy updated APKBUILD files back
