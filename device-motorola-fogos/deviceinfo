@@ -19,6 +19,5 @@ deviceinfo_flash_pagesize="4096"
 deviceinfo_bootimg_qcdt="false"
 deviceinfo_header_version="3"
 
-# To be determined from the device's actual boot configuration.
-deviceinfo_dtb=""
+# Kernel Stuff
 deviceinfo_kernel_cmdline="cgroup_disable=pressure console=tty0 loglevel=7 ignore_loglevel printk.time=1"
