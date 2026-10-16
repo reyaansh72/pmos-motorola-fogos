@@ -1,5 +1,5 @@
 # Device package for Motorola Moto G45 5G (fogos)
-maintainer=""
+maintainer="reyaansh72 <bhavya150520@gmail.com>"
 pkgname=device-motorola-fogos
 pkgver=1
 pkgrel=0
