@@ -20,7 +20,7 @@ This repository contains the device and kernel packages for bringing postmarketO
 | Device | Motorola Moto G45 5G |
 | Codename | `fogos` |
 | Architecture | AArch64 |
-| SoC | Qualcomm Snapdragon 695 5G |
+| SoC | Qualcomm Snapdragon 6s Gen 3 |
 | Platform | SM6375 |
 | Kernel | Linux 5.4.302 |
 | Kernel configuration | `holi-qgki_defconfig` |
