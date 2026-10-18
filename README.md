@@ -88,10 +88,6 @@ Your help made a real difference in getting this port unstuck. Thank you!
 
 Thanks to the **postmarketOS community** for its documentation, existing ports, and continued knowledge sharing.
 
-## Disclaimer
-
-This is an experimental, community-developed port. It is not an official Motorola release, and hardware support, boot reliability, and daily usability are not guaranteed.
-
 Use experimental images at your own risk and ensure you have an appropriate recovery procedure before attempting to boot or flash them.
 
 ## License
