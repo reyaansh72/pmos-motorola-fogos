@@ -10,6 +10,8 @@ license="MIT"
 depends="
         android-tools-mkbootimg
         linux-motorola-fogos
+        msm-firmware-loader
+        msm-firmware-loader-openrc
         postmarketos-base
         postmarketos-base-downstream
         "
